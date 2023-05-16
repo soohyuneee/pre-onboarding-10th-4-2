@@ -1,10 +1,8 @@
 import React from 'react';
 import useCreateTodo from '../hooks/useCreateTodo';
-import useInfiniteScroll from '../hooks/useInfiniteScroll';
 
 const Dropdown = ({ dropdown, inputText, setInputText, setTodos }) => {
 	const { handleSubmit } = useCreateTodo();
-	const { listRef } = useInfiniteScroll();
 
 	const handleClick = (idx) => {
 		setInputText('');
@@ -26,7 +24,6 @@ const Dropdown = ({ dropdown, inputText, setInputText, setTodos }) => {
 								)
 							)}
 					</li>
-					{idx === dropdown.length - 1 && <div ref={listRef}></div>}
 				</React.Fragment>
 			))}
 		</ul>
