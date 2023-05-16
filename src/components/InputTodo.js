@@ -1,65 +1,64 @@
-import { FaPlusCircle, FaSpinner } from "react-icons/fa";
-import { useCallback, useEffect, useState } from "react";
+import { FaPlusCircle, FaSpinner } from 'react-icons/fa';
+import { useEffect, useState } from 'react';
+import Dropdown from './Dropdown';
 
-import { createTodo } from "../api/todo";
-import useFocus from "../hooks/useFocus";
+import { getTodoSearch } from '../api/todo';
+import useFocus from '../hooks/useFocus';
+import useDebounce from '../hooks/useDebounce';
+import useCreateTodo from '../hooks/useCreateTodo';
 
 const InputTodo = ({ setTodos }) => {
-  const [inputText, setInputText] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const { ref, setFocus } = useFocus();
+	const [inputText, setInputText] = useState('');
+	const [dropdown, setDropdown] = useState('');
+	const { ref, setFocus } = useFocus();
 
-  useEffect(() => {
-    setFocus();
-  }, [setFocus]);
+	const debounceSearch = useDebounce(inputText, 500);
+	const { isLoading, handleSubmit } = useCreateTodo();
 
-  const handleSubmit = useCallback(
-    async (e) => {
-      try {
-        e.preventDefault();
-        setIsLoading(true);
+	useEffect(() => {
+		setFocus();
+	}, [setFocus]);
 
-        const trimmed = inputText.trim();
-        if (!trimmed) {
-          return alert("Please write something");
-        }
+	useEffect(() => {
+		const pageNum = 1;
+		if (debounceSearch) {
+			(async () => {
+				const { resData } = await getTodoSearch(debounceSearch, pageNum);
+				setDropdown(resData.result || []);
+			})();
+		}
+	}, [debounceSearch]);
 
-        const newItem = { title: trimmed };
-        const { data } = await createTodo(newItem);
-
-        if (data) {
-          return setTodos((prev) => [...prev, data]);
-        }
-      } catch (error) {
-        console.error(error);
-        alert("Something went wrong.");
-      } finally {
-        setInputText("");
-        setIsLoading(false);
-      }
-    },
-    [inputText, setTodos],
-  );
-
-  return (
-    <form className="form-container" onSubmit={handleSubmit}>
-      <input
-        className="input-text"
-        placeholder="Add new todo..."
-        ref={ref}
-        value={inputText}
-        onChange={(e) => setInputText(e.target.value)}
-        disabled={isLoading}
-      />
-      {!isLoading ? (
-        <button className="input-submit" type="submit">
-          <FaPlusCircle className="btn-plus" />
-        </button>
-      ) : (
-        <FaSpinner className="spinner" />
-      )}
-    </form>
-  );
+	return (
+		<>
+			<form
+				className="form-container"
+				onSubmit={(e) => {
+					e.preventDefault();
+					handleSubmit(inputText, setTodos);
+				}}
+			>
+				<input
+					className="input-text"
+					placeholder="Add new todo..."
+					ref={ref}
+					value={inputText}
+					onChange={(e) => setInputText(e.target.value)}
+					disabled={isLoading}
+				/>
+				{!isLoading ? (
+					<button className="input-submit" type="submit">
+						<FaPlusCircle className="btn-plus" />
+					</button>
+				) : (
+					<FaSpinner className="spinner" />
+				)}
+			</form>
+			{debounceSearch && (
+				<Dropdown dropdown={dropdown} inputText={inputText} setInputText={setInputText} setTodos={setTodos} />
+			)}
+		</>
+	);
 };
 
 export default InputTodo;
